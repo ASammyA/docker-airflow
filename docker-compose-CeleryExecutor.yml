@@ -1,30 +1,5 @@
-version: '2.1'
-services:
-    redis:
-        image: 'redis:5.0.5'
-        # command: redis-server --requirepass redispass
-
-    postgres:
-        image: postgres:9.6
-        environment:
-            - POSTGRES_USER=airflow
-            - POSTGRES_PASSWORD=airflow
-            - POSTGRES_DB=airflow
-        # Uncomment these lines to persist data on the local filesystem.
-        #     - PGDATA=/var/lib/postgresql/data/pgdata
-        # volumes:
-        #     - ./pgdata:/var/lib/postgresql/data/pgdata
-
-    webserver:
-        image: puckel/docker-airflow:1.10.9
-        restart: always
-        depends_on:
-            - postgres
-            - redis
-        environment:
-            - LOAD_EX=n
-            - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
+            - AWS_DEFAULT_REGION=us-east-1
             # - POSTGRES_USER=airflow
             # - POSTGRES_PASSWORD=airflow
             # - POSTGRES_DB=airflow
@@ -43,19 +18,20 @@ services:
             retries: 3
 
     flower:
-        image: puckel/docker-airflow:1.10.9
+        image: asammy/airflow-boto3
         restart: always
         depends_on:
             - redis
         environment:
             - EXECUTOR=Celery
+            - AWS_DEFAULT_REGION=us-east-1
             # - REDIS_PASSWORD=redispass
         ports:
             - "5555:5555"
         command: flower
 
     scheduler:
-        image: puckel/docker-airflow:1.10.9
+        image: asammy/airflow-boto3
         restart: always
         depends_on:
             - webserver
@@ -67,6 +43,7 @@ services:
             - LOAD_EX=n
             - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
+            - AWS_DEFAULT_REGION=us-east-1
             # - POSTGRES_USER=airflow
             # - POSTGRES_PASSWORD=airflow
             # - POSTGRES_DB=airflow
@@ -74,7 +51,7 @@ services:
         command: scheduler
 
     worker:
-        image: puckel/docker-airflow:1.10.9
+        image: asammy/airflow-boto3
         restart: always
         depends_on:
             - scheduler
@@ -85,8 +62,9 @@ services:
         environment:
             - FERNET_KEY=46BKJoQYlPPOexq0OhDZnIlNepKFf87WFwLbfzqDDho=
             - EXECUTOR=Celery
+            - AWS_DEFAULT_REGION=us-east-1
             # - POSTGRES_USER=airflow
             # - POSTGRES_PASSWORD=airflow
             # - POSTGRES_DB=airflow
             # - REDIS_PASSWORD=redispass
-        command: worker
+        command: worker                                                                                                                                                                                                                                                 96,23         Bot
