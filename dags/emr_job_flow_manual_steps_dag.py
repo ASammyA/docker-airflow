@@ -54,23 +54,15 @@ SPARK_TEST_STEPS = [
             'Jar': 'command-runner.jar',
             'Args': [
                 '/usr/bin/spark-submit', 
-                '--class', 'Driver.MainApp',
                 '--master', 'yarn',
                 '--deploy-mode','cluster',
                 '--num-executors','2',
                 '--driver-memory','512m',
                 '--executor-memory','3g',
                 '--executor-cores','2',
-                's3://sammy-de-midterm/WCD-demo_2.11-1.0.jar',
-                '-p','wcd-demo',
-                '-i','Csv',
-                '-o','parquet',
-                #'-s','s3://sammy-de-midterm/banking.csv',
-                '-s', "{{ task_instance.xcom_pull('parse_request', key='s3location') }}",
-                '-d','s3://sammy-de-midterm/banking',
-                '-c','job',
-                '-m','append',
-                '--input-options','header=true'
+                '--py-files', 's3://sammy-de-midterm/job.zip',
+                              's3://sammy-de-midterm/workflow_entry.py',
+                '-p', "{'input_path': '{{ task_instance.xcom_pull('parse_request', key='s3location') }}', 'name': 'class_demo', 'file_type': 'txt', 'output_path': 's3://sammy-de-midterm/banking_data_output', 'partition_column': 'job' }"
             ]
         }
     }
