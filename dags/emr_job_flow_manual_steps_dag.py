@@ -40,7 +40,7 @@ DEFAULT_ARGS = {
     'email_on_retry': False
 }
 
-CLUSTER_ID = 'j-1GTSVNDFNSNPZ'
+CLUSTER_ID = 'j-1WAZZDKEAFUW7'
 
 def retrieve_s3_file(**kwargs):
     s3_location = kwargs['dag_run'].conf['s3_location'] 
