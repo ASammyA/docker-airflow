@@ -60,9 +60,9 @@ SPARK_TEST_STEPS = [
                 '--driver-memory','512m',
                 '--executor-memory','3g',
                 '--executor-cores','2',
-                '--py-files', 's3://sammy-midterm-code/job.zip'
+                '--py-files', 's3://sammy-midterm-code/job.zip',
                 's3://sammy-midterm-code/workflow_entry.py',
-                '-p', '''"{'input_path':'s3://sammy-de-midterm/banking.csv','name':'demo', 'file_type':'txt', 'output_path':'s3://sammy-midterm-output', 'partition_column': 'job'}"'''
+                '-p', "{'input_path':'s3://sammy-de-midterm/banking.csv','name':'demo', 'file_type':'txt', 'output_path':'s3://sammy-midterm-output', 'partition_column': 'job'}"
             ]
         }
     }
