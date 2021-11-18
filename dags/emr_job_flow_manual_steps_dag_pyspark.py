@@ -40,7 +40,7 @@ DEFAULT_ARGS = {
     'email_on_retry': False
 }
 
-CLUSTER_ID = 'j-3VBOC64NMBWMZ'
+CLUSTER_ID = 'j-95VBH3998QB9'
 
 def retrieve_s3_file(**kwargs):
     s3_location = kwargs['dag_run'].conf['s3_location'] 
@@ -68,6 +68,8 @@ SPARK_TEST_STEPS = [
     }
 ]
 
+# /usr/bin/spark-submit --master yarn --deploy-mode cluster --num-executors 2 --driver-memory 512m --executor-memory 3g --executor-cores 2 --py-files s3://sammy-midterm-code/job.zip s3://sammy-midterm-code/workflow_entry.py -p "{'input_path':'s3://sammy-de-midterm/banking.csv','name':'demo', 'file_type':'txt', 'output_path':'s3://sammy-midterm-output', 'partition_column': 'job'}"
+            
 
 dag = DAG(
     'emr_job_flow_manual_steps_dag_pyspark',
