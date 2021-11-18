@@ -40,7 +40,7 @@ DEFAULT_ARGS = {
     'email_on_retry': False
 }
 
-CLUSTER_ID = 'j-3VBOC64NMBWMZ'
+CLUSTER_ID = 'j-1GTSVNDFNSNPZ'
 
 def retrieve_s3_file(**kwargs):
     s3_location = kwargs['dag_run'].conf['s3_location'] 
@@ -70,7 +70,7 @@ SPARK_TEST_STEPS = [
 
 
 dag = DAG(
-    'emr_job_flow_manual_steps_dag',
+    'emr_job_flow_manual_steps_dag_pyspark',
     default_args=DEFAULT_ARGS,
     dagrun_timeout=timedelta(hours=2),
     schedule_interval='0 3 * * *'
