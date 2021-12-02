@@ -30,8 +30,6 @@ from airflow.contrib.operators.emr_terminate_job_flow_operator \
         import EmrTerminateJobFlowOperator
 from airflow.operators.python_operator import PythonOperator
 
-import boto3
-
 DEFAULT_ARGS = {
     'owner': 'airflow',
     'depends_on_past': False,
@@ -41,7 +39,7 @@ DEFAULT_ARGS = {
     'email_on_retry': False
 }
 
-CLUSTER_ID = ''
+CLUSTER_ID = watch_clusters()
 
 def retrieve_s3_file(**kwargs):
     s3_location = kwargs['dag_run'].conf['s3_location'] 
