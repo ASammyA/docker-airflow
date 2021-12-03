@@ -81,7 +81,7 @@ dag = DAG(
     'emr_job_flow_manual_steps_dag_scala',
     default_args=DEFAULT_ARGS,
     dagrun_timeout=timedelta(hours=2),
-    schedule_interval='0 3 * * *'
+    schedule_interval=None
 )
 
 
