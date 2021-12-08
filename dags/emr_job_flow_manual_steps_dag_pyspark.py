@@ -31,6 +31,8 @@ from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 from airflow.contrib.operators.emr_create_job_flow_operator import EmrCreateJobFlowOperator
 from airflow.contrib.sensors.emr_job_flow_sensor import EmrJobFlowSensor
+from datetime import datetime
+from datetime import date
 
 # import sys
 # sys.path.append("/usr/local/airflow/plugins")
@@ -45,11 +47,17 @@ DEFAULT_ARGS = {
     'email_on_retry': False
 }
 
-CLUSTER_ID = ''
+# CLUSTER_ID = ''
 
 def retrieve_s3_file(**kwargs):
     s3_location = kwargs['dag_run'].conf['s3_location'] 
     kwargs['ti'].xcom_push( key = 's3location', value = s3_location)
+
+# record current time to include in file name
+def record_time(**kwargs):
+    current_time = datetime.now().strftime("%H-%M")
+    timestamp = '_' + str(date.today().month) + '-' + str(date.today().day) + '_' + str(current_time)
+    kwargs['ti'].xcom_push( key = 'timestamp', value = timestamp)
 
 SPARK_STEPS = [
     {
@@ -67,7 +75,7 @@ SPARK_STEPS = [
                 '--executor-cores','2',
                 '--py-files', 's3://sammy-midterm-code/job.zip',
                 's3://sammy-midterm-code/workflow_entry.py',
-                '-p', "{'input_path':'{{ task_instance.xcom_pull('parse_request', key='s3location') }}','name':'demo', 'file_type':'txt', 'output_path':'s3://sammy-midterm-output/output/', 'partition_column': 'job'}"
+                '-p', "{'input_path':'{{ task_instance.xcom_pull('get_s3_file_path', key='s3location') }}','name':'demo', 'file_type':'txt', 'output_path': 's3://sammy-midterm-output/output{{ task_instance.xcom_pull('record_time', key='timestamp') }}/', 'partition_column': 'job'}"
             ]
         }
     }
@@ -94,16 +102,16 @@ JOB_FLOW_OVERRIDES = {
         "InstanceGroups": [
             {
                 'Name': 'Primary node',
-                'Market': 'SPOT',
+                'Market': 'ON_DEMAND',
                 'InstanceRole': 'MASTER',
-                'InstanceType': 'm5.xlarge',
+                'InstanceType': 'c5a.xlarge',
                 'InstanceCount': 1
             },
             {
                 'Name': 'Primary node',
-                'Market': 'SPOT',
+                'Market': 'ON_DEMAND',
                 'InstanceRole': 'CORE',
-                'InstanceType': 'm5.xlarge',
+                'InstanceType': 'c5a.xlarge',
                 'InstanceCount': 2
             }
         ],
@@ -137,26 +145,33 @@ dag = DAG(
     schedule_interval=None
 )
 
-parse_request = PythonOperator(
-        task_id='parse_request',
+get_s3_file_path = PythonOperator(
+        task_id='get_s3_file_path',
         provide_context=True,
         python_callable=retrieve_s3_file,
         dag=dag
     )
 
-job_flow_creator = EmrCreateJobFlowOperator(
-        task_id='create_job_flow',
+record_time = PythonOperator(
+        task_id='record_time',
+        provide_context=True,
+        python_callable=record_time,
+        dag=dag
+    )
+
+start_emr_cluster = EmrCreateJobFlowOperator(
+        task_id='start_emr_cluster',
         job_flow_overrides=JOB_FLOW_OVERRIDES,
         aws_conn_id='aws_default',
         emr_conn_id='emr_default',
         dag=dag
     )
 
-job_sensor = EmrJobFlowSensor(
-        task_id='check_job_flow',
-        job_flow_id="{{ task_instance.xcom_pull(task_ids='create_job_flow', key='return_value') }}",
+check_emr_success = EmrJobFlowSensor(
+        task_id='check_emr_success',
+        job_flow_id="{{ task_instance.xcom_pull(task_ids='start_emr_cluster', key='return_value') }}",
         aws_conn_id='aws_default',
         dag=dag
     )
 
-parse_request >> job_flow_creator >> job_sensor
+[get_s3_file_path, record_time] >> start_emr_cluster >> check_emr_success
