@@ -48,20 +48,8 @@ def record_time(**kwargs):
     timestamp = '_' + str(date.today().month) + '-' + str(date.today().day) + '_' + str(current_time)
     kwargs['ti'].xcom_push( key = 'timestamp', value = timestamp)
 
-def stop_ec2():
-    session = boto3.Session().client('ec2', region_name= 'us-east-1')
-    # ec2_resource = boto3.resource('ec2', region_name= 'us-east-1')
-    # instance = ec2_resource.Instance('i-0e0833f712d8d1b8a')
-    session.stop_instances(
-        InstanceIds=['i-0e0833f712d8d1b8a']
-    )
-
 def output_path(**kwargs):
     client = boto3.Session().client('emr', region_name= 'us-east-1')
-    # cluster_id = "{{ task_instance.xcom_pull(task_ids='start_emr_cluster', key='return_value') }}"
-    # cluster_id = kwargs['task_ids'].xcom_pull( task_ids='start_emr_cluster', key='return_value' )
-    # kwargs.get('templates_dict').get('cluster_id')
-    # cluster_id=kwargs['ti'].xcom_pull(task_ids='start_emr_cluster')
     cluster_id = kwargs['task_instance'].xcom_pull(task_ids='start_emr_cluster', key='return_value')
     steps = client.list_steps(
        ClusterId=cluster_id
@@ -97,11 +85,19 @@ def run_crawler(**kwargs):
         Name=new_name
     )
 
-def run_superset_ec2():
+def start_superset_ec2():
     client = boto3.Session().client('ec2', region_name= 'us-east-1')
     client.start_instances(
         InstanceIds=['i-0a4c0ce76c11235a0']
     )
+
+# def stop_airflow_ec2():
+#     session = boto3.Session().client('ec2', region_name= 'us-east-1')
+#     # ec2_resource = boto3.resource('ec2', region_name= 'us-east-1')
+#     # instance = ec2_resource.Instance('i-0e0833f712d8d1b8a')
+#     session.stop_instances(
+#         InstanceIds=['i-0e0833f712d8d1b8a']
+#    )
 
 SPARK_STEPS = [
     {
@@ -220,7 +216,6 @@ get_output_path = PythonOperator(
         task_id='get_output_path',
         python_callable=output_path,
         privode_context=True,
-        # templates_dict={"cluster_id":"{{ task_instance.xcom_pull(task_ids='start_emr_cluster', key='return_value') }}"},
         dag=dag
     )
 
@@ -238,17 +233,17 @@ run_crawler = PythonOperator(
         dag=dag
     )
 
-run_superset_ec2 = PythonOperator(
-        task_id='run_superset_ec2',
-        python_callable=run_superset_ec2,
+start_superset_ec2 = PythonOperator(
+        task_id='start_superset_ec2',
+        python_callable=start_superset_ec2,
         provide_context=False,
         dag=dag
     )
 
-# stop_ec2 = PythonOperator(
-#         task_id='stop_ec2',
-#         python_callable=stop_ec2,
+# stop_airflow_ec2 = PythonOperator(
+#         task_id='stop_airflow_ec2',
+#         python_callable=stop_airflow_ec2,
 #         dag=dag
 #     )
 
-[get_s3_file_path, record_time] >> start_emr_cluster >> [check_emr_success, get_output_path] >> create_crawler >> run_crawler >> run_superset_ec2 #>> stop_ec2
+[get_s3_file_path, record_time] >> start_emr_cluster >> [check_emr_success, get_output_path] >> create_crawler >> run_crawler >> start_superset_ec2 #>> stop_airflow_ec2
